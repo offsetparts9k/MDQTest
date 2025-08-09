@@ -1,56 +1,127 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>MDQ — Masjid Darul Quran Prayer Times</title>
-  <link rel="stylesheet" href="styles.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masjid Prayer Times</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        table {
+            margin: auto;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        #status {
+            margin: 15px 0;
+            font-size: 1.1em;
+            color: #333;
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <h1>Masjid Darul Quran (MDQ)</h1>
-    <p id="locationLine">Loading location...</p>
-  </header>
 
-  <main>
-    <section class="card">
-      <h2>Prayer Times</h2>
+    <h1>Masjid Daily Prayer Times</h1>
+    <p id="status">Fetching your location...</p>
 
-      <table id="prayerTable" aria-live="polite">
+    <table>
         <thead>
-          <tr>
-            <th>Prayer</th>
-            <th>Adhan</th>
-            <th>Iqamah</th>
-            <th>Status</th>
-          </tr>
+            <tr>
+                <th>Prayer</th>
+                <th>Adhan</th>
+                <th>Iqamah</th>
+            </tr>
         </thead>
-        <tbody></tbody>
-      </table>
+        <tbody id="prayer-times">
+            <tr><td colspan="3">Loading...</td></tr>
+        </tbody>
+    </table>
 
-      <div id="countdown" class="countdown"></div>
-      <div id="lastUpdated" class="muted"></div>
-      <div id="apiWarning" class="muted"></div>
-    </section>
+    <script>
+        const today = new Date().toISOString().split("T")[0];
 
-    <section class="card small">
-      <h3>Quick Controls</h3>
-      <div class="controls">
-        <button id="refreshBtn">Refresh Adhan Now</button>
-        <button id="openAdmin">Edit Iqamah & Settings</button>
-      </div>
-    </section>
-  </main>
+        function getUserLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        document.getElementById("status").textContent = "Location found. Fetching prayer times...";
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        fetchPrayerTimes(lat, lon);
+                    },
+                    error => {
+                        document.getElementById("status").textContent = "Location permission denied. Please allow location access.";
+                        document.getElementById("prayer-times").innerHTML =
+                            "<tr><td colspan='3'>Location permission denied.</td></tr>";
+                    }
+                );
+            } else {
+                document.getElementById("status").textContent = "Geolocation not supported.";
+                document.getElementById("prayer-times").innerHTML =
+                    "<tr><td colspan='3'>Geolocation not supported.</td></tr>";
+            }
+        }
 
-  <footer>
-    <small>MDQ • Auto-updates Adhan via Aladhan API • Built for local mosques</small>
-  </footer>
+        async function fetchPrayerTimes(lat, lon) {
+            const apiURL = `https://api.aladhan.com/v1/timings/${Math.floor(Date.now() / 1000)}?latitude=${lat}&longitude=${lon}&method=2`;
 
-  <script src="script.js"></script>
-  <script>
-    // initialize page mode
-    window.pageMode = "public";
-    initPublicPage();
-  </script>
+            try {
+                const res = await fetch(apiURL);
+                if (!res.ok) throw new Error("API request failed");
+
+                const data = await res.json();
+                const timings = data.data.timings;
+
+                localStorage.setItem("adhanTimes", JSON.stringify({ date: today, timings, lat, lon }));
+
+                displayPrayerTimes(timings);
+                document.getElementById("status").textContent = "Prayer times loaded.";
+            } catch (error) {
+                console.error("Fetch error:", error);
+
+                const cached = JSON.parse(localStorage.getItem("adhanTimes"));
+                if (cached && cached.date === today) {
+                    document.getElementById("status").textContent = "Using cached data.";
+                    displayPrayerTimes(cached.timings);
+                } else {
+                    document.getElementById("status").textContent = "Unable to fetch Adhan times.";
+                    document.getElementById("prayer-times").innerHTML =
+                        "<tr><td colspan='3'>Unable to fetch Adhan times and no cached data available.</td></tr>";
+                }
+            }
+        }
+
+        function displayPrayerTimes(timings) {
+            const tableBody = document.getElementById("prayer-times");
+            tableBody.innerHTML = "";
+
+            const prayers = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
+
+            prayers.forEach(prayer => {
+                const row = `<tr>
+                    <td>${prayer}</td>
+                    <td>${timings[prayer]}</td>
+                    <td>--:--</td> <!-- Placeholder for Iqamah -->
+                </tr>`;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        getUserLocation();
+    </script>
+
 </body>
 </html>
