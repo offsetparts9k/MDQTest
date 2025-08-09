@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MDQ — Masjid Darul Quran Prayer Times</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Masjid Darul Quran (MDQ)</h1>
+    <p id="locationLine">Loading location...</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Prayer Times</h2>
+
+      <table id="prayerTable" aria-live="polite">
+        <thead>
+          <tr>
+            <th>Prayer</th>
+            <th>Adhan</th>
+            <th>Iqamah</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <div id="countdown" class="countdown"></div>
+      <div id="lastUpdated" class="muted"></div>
+      <div id="apiWarning" class="muted"></div>
+    </section>
+
+    <section class="card small">
+      <h3>Quick Controls</h3>
+      <div class="controls">
+        <button id="refreshBtn">Refresh Adhan Now</button>
+        <button id="openAdmin">Edit Iqamah & Settings</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <small>MDQ • Auto-updates Adhan via Aladhan API • Built for local mosques</small>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+    // initialize page mode
+    window.pageMode = "public";
+    initPublicPage();
+  </script>
+</body>
+</html>
