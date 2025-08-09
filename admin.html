@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MDQ Admin — Edit Iqamah & Settings</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>MDQ Admin</h1>
+    <p>Edit Iqamah times and API settings for the mosque.</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Iqamah Times</h2>
+      <form id="iqamahForm">
+        <div class="grid">
+          <label>Fajr: <input name="Fajr" type="time" required></label>
+          <label>Dhuhr: <input name="Dhuhr" type="time" required></label>
+          <label>Asr: <input name="Asr" type="time" required></label>
+          <label>Maghrib: <input name="Maghrib" type="time" required></label>
+          <label>Isha: <input name="Isha" type="time" required></label>
+        </div>
+        <div class="formRow">
+          <button type="submit">Save Iqamah Times</button>
+          <button id="resetIqamah" type="button">Reset to Defaults</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card small">
+      <h2>Adhan API Settings</h2>
+      <form id="settingsForm">
+        <label>Method (calculation): <input id="method" type="number" min="0" max="12" value="2"></label>
+        <label>City: <input id="city" placeholder="e.g. New York"></label>
+        <label>Country: <input id="country" placeholder="e.g. US"></label>
+        <div class="formRow">
+          <button id="saveSettings" type="button">Save Settings</button>
+          <button id="tryGeo" type="button">Use Browser Location</button>
+        </div>
+      </form>
+      <p class="muted">If city/country are empty the site will try geolocation or use defaults.</p>
+    </section>
+
+    <section class="card small">
+      <h2>Advanced</h2>
+      <div class="formRow">
+        <button id="clearCache" type="button">Clear Stored Adhan & Iqamah (localStorage)</button>
+        <a href="index.html"><button type="button">Open Public Site</button></a>
+      </div>
+      <p class="muted">Local edits are stored in your browser. To share changes with others, copy files to server.</p>
+    </section>
+  </main>
+
+  <footer>
+    <small>MDQ Admin • Changes saved to browser storage</small>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+    window.pageMode = "admin";
+    initAdminPage();
+  </script>
+</body>
+</html>
