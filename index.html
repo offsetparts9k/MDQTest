@@ -1,127 +1,229 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Masjid Prayer Times</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        table {
-            margin: auto;
-            border-collapse: collapse;
-            background: white;
-            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
-        }
-        th, td {
-            padding: 10px 15px;
-            border: 1px solid #ccc;
-        }
-        th {
-            background-color: #007bff;
-            color: white;
-        }
-        #status {
-            margin: 15px 0;
-            font-size: 1.1em;
-            color: #333;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Masjid Prayer Times</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    table {
+      margin: auto;
+      border-collapse: collapse;
+      background: white;
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+    }
+    th, td {
+      padding: 10px 15px;
+      border: 1px solid #ccc;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    #status {
+      margin: 15px 0;
+      font-size: 1.1em;
+      color: #333;
+    }
+    #edit-iqamah-container {
+      margin-top: 20px;
+    }
+    #iqamah-form input {
+      width: 60px;
+      padding: 5px;
+      margin: 0 5px 10px 0;
+      text-align: center;
+    }
+    #iqamah-form label {
+      margin-right: 10px;
+      font-weight: bold;
+    }
+    #iqamah-form button {
+      margin-top: 10px;
+      padding: 7px 15px;
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #iqamah-form button:hover {
+      background: #0056b3;
+    }
+  </style>
 </head>
 <body>
 
-    <h1>Masjid Daily Prayer Times</h1>
-    <p id="status">Fetching your location...</p>
+  <h1>Masjid Daily Prayer Times</h1>
+  <p id="status">Fetching your location...</p>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Prayer</th>
-                <th>Adhan</th>
-                <th>Iqamah</th>
-            </tr>
-        </thead>
-        <tbody id="prayer-times">
-            <tr><td colspan="3">Loading...</td></tr>
-        </tbody>
-    </table>
+  <table>
+    <thead>
+      <tr>
+        <th>Prayer</th>
+        <th>Adhan</th>
+        <th>Iqamah</th>
+      </tr>
+    </thead>
+    <tbody id="prayer-times">
+      <tr><td colspan="3">Loading...</td></tr>
+    </tbody>
+  </table>
 
-    <script>
-        const today = new Date().toISOString().split("T")[0];
+  <div id="edit-iqamah-container">
+    <button id="edit-iqamah-btn">Edit Iqamah Times</button>
+    <form id="iqamah-form" style="display:none;">
+      <div>
+        <label for="iqamah-fajr">Fajr:</label>
+        <input type="time" id="iqamah-fajr" required>
+      </div>
+      <div>
+        <label for="iqamah-dhuhr">Dhuhr:</label>
+        <input type="time" id="iqamah-dhuhr" required>
+      </div>
+      <div>
+        <label for="iqamah-asr">Asr:</label>
+        <input type="time" id="iqamah-asr" required>
+      </div>
+      <div>
+        <label for="iqamah-maghrib">Maghrib:</label>
+        <input type="time" id="iqamah-maghrib" required>
+      </div>
+      <div>
+        <label for="iqamah-isha">Isha:</label>
+        <input type="time" id="iqamah-isha" required>
+      </div>
+      <button type="submit">Save Iqamah Times</button>
+    </form>
+  </div>
 
-        function getUserLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    position => {
-                        document.getElementById("status").textContent = "Location found. Fetching prayer times...";
-                        const lat = position.coords.latitude;
-                        const lon = position.coords.longitude;
-                        fetchPrayerTimes(lat, lon);
-                    },
-                    error => {
-                        document.getElementById("status").textContent = "Location permission denied. Please allow location access.";
-                        document.getElementById("prayer-times").innerHTML =
-                            "<tr><td colspan='3'>Location permission denied.</td></tr>";
-                    }
-                );
-            } else {
-                document.getElementById("status").textContent = "Geolocation not supported.";
-                document.getElementById("prayer-times").innerHTML =
-                    "<tr><td colspan='3'>Geolocation not supported.</td></tr>";
-            }
+  <script>
+    const today = new Date().toISOString().split("T")[0];
+    const prayers = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
+    let adhanTimings = {};
+    let iqamahTimings = {};
+
+    function getUserLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          position => {
+            document.getElementById("status").textContent = "Location found. Fetching prayer times...";
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            fetchPrayerTimes(lat, lon);
+          },
+          error => {
+            document.getElementById("status").textContent = "Location permission denied. Please allow location access.";
+            document.getElementById("prayer-times").innerHTML =
+              "<tr><td colspan='3'>Location permission denied.</td></tr>";
+          }
+        );
+      } else {
+        document.getElementById("status").textContent = "Geolocation not supported.";
+        document.getElementById("prayer-times").innerHTML =
+          "<tr><td colspan='3'>Geolocation not supported.</td></tr>";
+      }
+    }
+
+    async function fetchPrayerTimes(lat, lon) {
+      const apiURL = `https://api.aladhan.com/v1/timings/${Math.floor(Date.now() / 1000)}?latitude=${lat}&longitude=${lon}&method=2`;
+
+      try {
+        const res = await fetch(apiURL);
+        if (!res.ok) throw new Error("API request failed");
+
+        const data = await res.json();
+        adhanTimings = data.data.timings;
+
+        localStorage.setItem("adhanTimes", JSON.stringify({ date: today, timings: adhanTimings, lat, lon }));
+
+        loadIqamahTimes();
+        displayPrayerTimes();
+        document.getElementById("status").textContent = "Prayer times loaded.";
+      } catch (error) {
+        console.error("Fetch error:", error);
+
+        const cached = JSON.parse(localStorage.getItem("adhanTimes"));
+        if (cached && cached.date === today) {
+          document.getElementById("status").textContent = "Using cached data.";
+          adhanTimings = cached.timings;
+          loadIqamahTimes();
+          displayPrayerTimes();
+        } else {
+          document.getElementById("status").textContent = "Unable to fetch Adhan times.";
+          document.getElementById("prayer-times").innerHTML =
+            "<tr><td colspan='3'>Unable to fetch Adhan times and no cached data available.</td></tr>";
         }
+      }
+    }
 
-        async function fetchPrayerTimes(lat, lon) {
-            const apiURL = `https://api.aladhan.com/v1/timings/${Math.floor(Date.now() / 1000)}?latitude=${lat}&longitude=${lon}&method=2`;
+    function loadIqamahTimes() {
+      const savedIqamah = localStorage.getItem("iqamahTimes");
+      if (savedIqamah) {
+        iqamahTimings = JSON.parse(savedIqamah);
+      } else {
+        // default empty or --:-- for all prayers
+        iqamahTimings = {};
+        prayers.forEach(p => iqamahTimings[p] = "--:--");
+      }
+      fillIqamahForm();
+    }
 
-            try {
-                const res = await fetch(apiURL);
-                if (!res.ok) throw new Error("API request failed");
-
-                const data = await res.json();
-                const timings = data.data.timings;
-
-                localStorage.setItem("adhanTimes", JSON.stringify({ date: today, timings, lat, lon }));
-
-                displayPrayerTimes(timings);
-                document.getElementById("status").textContent = "Prayer times loaded.";
-            } catch (error) {
-                console.error("Fetch error:", error);
-
-                const cached = JSON.parse(localStorage.getItem("adhanTimes"));
-                if (cached && cached.date === today) {
-                    document.getElementById("status").textContent = "Using cached data.";
-                    displayPrayerTimes(cached.timings);
-                } else {
-                    document.getElementById("status").textContent = "Unable to fetch Adhan times.";
-                    document.getElementById("prayer-times").innerHTML =
-                        "<tr><td colspan='3'>Unable to fetch Adhan times and no cached data available.</td></tr>";
-                }
-            }
+    function fillIqamahForm() {
+      prayers.forEach(prayer => {
+        const input = document.getElementById(`iqamah-${prayer.toLowerCase()}`);
+        if (input && iqamahTimings[prayer] && iqamahTimings[prayer] !== "--:--") {
+          input.value = iqamahTimings[prayer];
         }
+      });
+    }
 
-        function displayPrayerTimes(timings) {
-            const tableBody = document.getElementById("prayer-times");
-            tableBody.innerHTML = "";
+    function displayPrayerTimes() {
+      const tableBody = document.getElementById("prayer-times");
+      tableBody.innerHTML = "";
 
-            const prayers = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
+      prayers.forEach(prayer => {
+        const adhan = adhanTimings[prayer] || "--:--";
+        const iqamah = iqamahTimings[prayer] || "--:--";
 
-            prayers.forEach(prayer => {
-                const row = `<tr>
-                    <td>${prayer}</td>
-                    <td>${timings[prayer]}</td>
-                    <td>--:--</td> <!-- Placeholder for Iqamah -->
-                </tr>`;
-                tableBody.innerHTML += row;
-            });
-        }
+        const row = `<tr>
+          <td>${prayer}</td>
+          <td>${adhan}</td>
+          <td>${iqamah}</td>
+        </tr>`;
+        tableBody.innerHTML += row;
+      });
+    }
 
-        getUserLocation();
-    </script>
+    // Handle Edit Iqamah button
+    document.getElementById("edit-iqamah-btn").addEventListener("click", () => {
+      const form = document.getElementById("iqamah-form");
+      form.style.display = form.style.display === "none" ? "block" : "none";
+    });
+
+    // Handle form submit
+    document.getElementById("iqamah-form").addEventListener("submit", e => {
+      e.preventDefault();
+
+      prayers.forEach(prayer => {
+        const val = document.getElementById(`iqamah-${prayer.toLowerCase()}`).value;
+        iqamahTimings[prayer] = val || "--:--";
+      });
+
+      localStorage.setItem("iqamahTimes", JSON.stringify(iqamahTimings));
+      displayPrayerTimes();
+
+      alert("Iqamah times saved!");
+      document.getElementById("iqamah-form").style.display = "none";
+    });
+
+    // Initialize
+    getUserLocation();
+  </script>
 
 </body>
 </html>
