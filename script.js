@@ -1,9 +1,29 @@
-const apiURL = "https://api.aladhan.com/v1/timingsByCity?city=Bay%20Shore&country=US&method=2";
-
 // Get today's date in YYYY-MM-DD
 const today = new Date().toISOString().split("T")[0];
 
-async function fetchPrayerTimes() {
+function getUserLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            position => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                fetchPrayerTimes(lat, lon);
+            },
+            error => {
+                console.error("Location error:", error);
+                document.getElementById("prayer-times").innerHTML =
+                    "<tr><td colspan='3'>Location permission denied. Please allow location access.</td></tr>";
+            }
+        );
+    } else {
+        document.getElementById("prayer-times").innerHTML =
+            "<tr><td colspan='3'>Geolocation is not supported by your browser.</td></tr>";
+    }
+}
+
+async function fetchPrayerTimes(lat, lon) {
+    const apiURL = `https://api.aladhan.com/v1/timings/${Math.floor(Date.now() / 1000)}?latitude=${lat}&longitude=${lon}&method=2`;
+
     try {
         const res = await fetch(apiURL);
         if (!res.ok) throw new Error("API request failed");
@@ -12,7 +32,7 @@ async function fetchPrayerTimes() {
         const timings = data.data.timings;
 
         // Save in localStorage with today's date
-        localStorage.setItem("adhanTimes", JSON.stringify({ date: today, timings }));
+        localStorage.setItem("adhanTimes", JSON.stringify({ date: today, timings, lat, lon }));
 
         displayPrayerTimes(timings);
     } catch (error) {
@@ -24,8 +44,8 @@ async function fetchPrayerTimes() {
             console.warn("Using cached data");
             displayPrayerTimes(cached.timings);
         } else {
-            document.getElementById("prayer-times").innerHTML = 
-                "<tr><td colspan='2'>Unable to fetch Adhan times and no cached data available.</td></tr>";
+            document.getElementById("prayer-times").innerHTML =
+                "<tr><td colspan='3'>Unable to fetch Adhan times and no cached data available.</td></tr>";
         }
     }
 }
@@ -46,4 +66,5 @@ function displayPrayerTimes(timings) {
     });
 }
 
-fetchPrayerTimes();
+// Start process
+getUserLocation();
