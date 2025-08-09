@@ -34,7 +34,7 @@
       margin-top: 20px;
     }
     #iqamah-form input {
-      width: 60px;
+      width: 80px;
       padding: 5px;
       margin: 0 5px 10px 0;
       text-align: center;
@@ -91,7 +91,7 @@
       </div>
       <div>
         <label for="iqamah-maghrib">Maghrib:</label>
-        <input type="time" id="iqamah-maghrib" required>
+        <input type="time" id="iqamah-maghrib" required disabled>
       </div>
       <div>
         <label for="iqamah-isha">Isha:</label>
@@ -106,6 +106,25 @@
     const prayers = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
     let adhanTimings = {};
     let iqamahTimings = {};
+
+    // Convert 24h "HH:mm" string to 12h format with AM/PM
+    function to12Hour(time24) {
+      if (!time24 || time24 === "--:--") return "--:--";
+      let [h, m] = time24.split(":").map(Number);
+      const ampm = h >= 12 ? "PM" : "AM";
+      h = h % 12 || 12;
+      return `${h}:${m.toString().padStart(2, "0")} ${ampm}`;
+    }
+
+    // Add minutes to a "HH:mm" string, return new "HH:mm" (24h) string
+    function addMinutes(time, minsToAdd) {
+      let [h, m] = time.split(":").map(Number);
+      m += minsToAdd;
+      h += Math.floor(m / 60);
+      m = m % 60;
+      h = h % 24;
+      return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+    }
 
     function getUserLocation() {
       if (navigator.geolocation) {
@@ -166,18 +185,34 @@
       if (savedIqamah) {
         iqamahTimings = JSON.parse(savedIqamah);
       } else {
-        // default empty or --:-- for all prayers
         iqamahTimings = {};
         prayers.forEach(p => iqamahTimings[p] = "--:--");
       }
+
+      // Automatically set Maghrib Iqamah to 2 mins after Adhan
+      if (adhanTimings.Maghrib && adhanTimings.Maghrib !== "--:--") {
+        iqamahTimings.Maghrib = addMinutes(adhanTimings.Maghrib, 2);
+      }
+
       fillIqamahForm();
     }
 
     function fillIqamahForm() {
       prayers.forEach(prayer => {
         const input = document.getElementById(`iqamah-${prayer.toLowerCase()}`);
-        if (input && iqamahTimings[prayer] && iqamahTimings[prayer] !== "--:--") {
-          input.value = iqamahTimings[prayer];
+        if (input) {
+          if (prayer === "Maghrib") {
+            // Disable Maghrib input because it's auto-calculated
+            input.value = iqamahTimings[prayer];
+            input.disabled = true;
+          } else {
+            input.disabled = false;
+            if (iqamahTimings[prayer] && iqamahTimings[prayer] !== "--:--") {
+              input.value = iqamahTimings[prayer];
+            } else {
+              input.value = "";
+            }
+          }
         }
       });
     }
@@ -187,8 +222,8 @@
       tableBody.innerHTML = "";
 
       prayers.forEach(prayer => {
-        const adhan = adhanTimings[prayer] || "--:--";
-        const iqamah = iqamahTimings[prayer] || "--:--";
+        const adhan = to12Hour(adhanTimings[prayer]) || "--:--";
+        const iqamah = iqamahTimings[prayer] ? to12Hour(iqamahTimings[prayer]) : "--:--";
 
         const row = `<tr>
           <td>${prayer}</td>
@@ -210,9 +245,16 @@
       e.preventDefault();
 
       prayers.forEach(prayer => {
-        const val = document.getElementById(`iqamah-${prayer.toLowerCase()}`).value;
-        iqamahTimings[prayer] = val || "--:--";
+        if (prayer !== "Maghrib") {
+          const val = document.getElementById(`iqamah-${prayer.toLowerCase()}`).value;
+          iqamahTimings[prayer] = val || "--:--";
+        }
       });
+
+      // Always recalc Maghrib Iqamah to 2 minutes after Adhan
+      if (adhanTimings.Maghrib && adhanTimings.Maghrib !== "--:--") {
+        iqamahTimings.Maghrib = addMinutes(adhanTimings.Maghrib, 2);
+      }
 
       localStorage.setItem("iqamahTimes", JSON.stringify(iqamahTimings));
       displayPrayerTimes();
